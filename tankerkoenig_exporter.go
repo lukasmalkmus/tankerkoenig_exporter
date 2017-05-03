@@ -28,7 +28,7 @@ var (
 	apiKey             = flag.String("api.key", "", "Personal API key used to authenticate against the tankerkoenig API.")
 	apiLat             = flag.Float64("api.lat", 0.0, "Latitude")
 	apiLng             = flag.Float64("api.lng", 0.0, "Longitude")
-	apiRad             = flag.Int("api.rad", 15, "Search radius")
+	apiRad             = flag.Int("api.rad", 5, "Search radius")
 	apiRequestInterval = flag.Duration("api.request-interval", 5*time.Minute, "Scrape interval of tankerkoenig API.")
 	webListenAddress   = flag.String("web.listen-address", ":9243", "Address on which to expose metrics and web interface.")
 	webMetricsPath     = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
@@ -147,10 +147,10 @@ func New(apiKey string, requestInterval time.Duration, lat, lng float64, rad int
 			case <-e.requestInterval.C:
 				// Reset and scrape metrics. Prevent access by locking RWMutex.
 				e.mutex.Lock()
-				defer e.mutex.Unlock()
 				e.price.Reset()
 				e.open.Reset()
 				e.scrape()
+				e.mutex.Unlock()
 			case <-e.quitCh:
 				close(e.doneCh)
 				return
