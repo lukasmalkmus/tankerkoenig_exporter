@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -26,11 +25,14 @@ const (
 )
 
 var (
-	apiKey           = flag.String("api.key", "", "Personal API key used to authenticate against the tankerkoenig API.")
-	apiStations      = flag.String("api.stations", "", "IDs of stations to scrape prices from.")
-	webListenAddress = flag.String("web.listen-address", ":9243", "Address on which to expose metrics and web interface.")
-	webMetricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
-	showVersion      = flag.Bool("version", false, "Print version information.")
+	apiKey             = flag.String("api.key", "", "Personal API key used to authenticate against the tankerkoenig API.")
+	apiLat             = flag.Float64("api.lat", 0.0, "Latitude")
+	apiLng             = flag.Float64("api.lng", 0.0, "Longitude")
+	apiRad             = flag.Int("api.rad", 15, "Search radius")
+	apiRequestInterval = flag.Duration("api.request-interval", 5*time.Minute, "Scrape interval of tankerkoenig API.")
+	webListenAddress   = flag.String("web.listen-address", ":9243", "Address on which to expose metrics and web interface.")
+	webMetricsPath     = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
+	showVersion        = flag.Bool("version", false, "Print version information.")
 )
 
 // landingPage contains the HTML served at '/'.
@@ -65,7 +67,7 @@ type Exporter struct {
 	mutex           sync.RWMutex
 	client          *tankerkoenig.Client
 	requestInterval *time.Ticker
-	stationsIDs     []string
+	stations        map[string]tankerkoenig.Station
 
 	quitCh chan struct{}
 	doneCh chan struct{}
@@ -76,14 +78,15 @@ type Exporter struct {
 
 	// Tankerkoenig metrics.
 	price *prometheus.GaugeVec
+	open  *prometheus.GaugeVec
 }
 
 // New returns a new, initialized Tankerkoenig Exporter.
-func New(apiKey string, stations []string) (*Exporter, error) {
+func New(apiKey string, requestInterval time.Duration, lat, lng float64, rad int) (*Exporter, error) {
 	e := &Exporter{
 		client:          tankerkoenig.NewClient(apiKey, httpClient),
-		requestInterval: time.NewTicker(5 * time.Minute),
-		stationsIDs:     stations,
+		requestInterval: time.NewTicker(requestInterval),
+		stations:        make(map[string]tankerkoenig.Station),
 
 		quitCh: make(chan struct{}),
 		doneCh: make(chan struct{}),
@@ -116,7 +119,22 @@ func New(apiKey string, stations []string) (*Exporter, error) {
 			Subsystem: "station",
 			Name:      "price_euro",
 			Help:      "Gas prices in EURO (€).",
-		}, []string{"station_id", "status", "product"}),
+		}, []string{"station_id", "station_name", "product"}),
+		open: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: "station",
+			Name:      "open",
+			Help:      "Status of the station. 1 for OPEN, 0 for CLOSED.",
+		}, []string{"station_id", "station_name"}),
+	}
+
+	// Retrieve stations in specified range, when the exporter starts.
+	stations, _, err := e.client.Station.List(lat, lng, rad)
+	if err != nil {
+		log.Fatalln("Couldn't retreive initial station list:", err)
+	}
+	for _, s := range stations {
+		e.stations[s.Id] = s
 	}
 
 	// Initial scrape.
@@ -131,10 +149,11 @@ func New(apiKey string, stations []string) (*Exporter, error) {
 				e.mutex.Lock()
 				defer e.mutex.Unlock()
 				e.price.Reset()
+				e.open.Reset()
 				e.scrape()
 			case <-e.quitCh:
 				close(e.doneCh)
-				break
+				return
 			}
 		}
 	}()
@@ -150,6 +169,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.failedScrapes.Describe(ch)
 	e.totalScrapes.Describe(ch)
 	e.price.Describe(ch)
+	e.open.Describe(ch)
 }
 
 // Collect the stats from the configured ArmA 3 server and deliver them as
@@ -166,6 +186,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.failedScrapes.Collect(ch)
 	e.totalScrapes.Collect(ch)
 	e.price.Collect(ch)
+	e.open.Collect(ch)
 }
 
 // Close the Exporter gracefully. This will shut down the background scraper.
@@ -185,8 +206,14 @@ func (e *Exporter) scrape() {
 	}(time.Now())
 	e.totalScrapes.Inc()
 
+	// Extract station IDs for price request.
+	ids := make([]string, 0)
+	for id := range e.stations {
+		ids = append(ids, id)
+	}
+
 	// Retrieve prices.
-	prices, _, err := e.client.Prices.Get(e.stationsIDs)
+	prices, _, err := e.client.Prices.Get(ids)
 	if err != nil {
 		e.up.Set(0)
 		e.failedScrapes.Inc()
@@ -196,14 +223,27 @@ func (e *Exporter) scrape() {
 
 	// Set metric values.
 	for id, p := range prices {
+		s := e.stations[id]
+		name := fmt.Sprintf("%s (%s)", s.Name, s.Place)
+
+		// Station status.
+		if stat := p.Status; stat == "no prices" {
+			continue
+		} else if stat == "open" {
+			e.open.WithLabelValues(id, name).Set(1.0)
+		} else {
+			e.open.WithLabelValues(id, name).Set(0.0)
+		}
+
+		// Station prices.
 		if f, ok := p.Diesel.(float64); ok {
-			e.price.WithLabelValues(id, p.Status, "diesel").Set(f)
+			e.price.WithLabelValues(id, name, "diesel").Set(f)
 		}
 		if f, ok := p.E5.(float64); ok {
-			e.price.WithLabelValues(id, p.Status, "e5").Set(f)
+			e.price.WithLabelValues(id, name, "e5").Set(f)
 		}
 		if f, ok := p.E10.(float64); ok {
-			e.price.WithLabelValues(id, p.Status, "e10").Set(f)
+			e.price.WithLabelValues(id, name, "e10").Set(f)
 		}
 	}
 
@@ -225,7 +265,7 @@ func main() {
 	log.Infoln("Build context", version.BuildContext())
 
 	// Create a new Tankerkoenig exporter. Exit if an error is returned.
-	exporter, err := New(*apiKey, strings.Split(*apiStations, ","))
+	exporter, err := New(*apiKey, *apiRequestInterval, *apiLat, *apiLng, *apiRad)
 	if err != nil {
 		log.Fatalln(err)
 	}
