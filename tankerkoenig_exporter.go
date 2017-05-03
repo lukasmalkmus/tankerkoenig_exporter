@@ -197,13 +197,13 @@ func (e *Exporter) scrape() {
 	// Set metric values.
 	for id, p := range prices {
 		if f, ok := p.Diesel.(float64); ok {
-			e.price.WithLabelValues(id, "diesel", p.Status).Set(f)
+			e.price.WithLabelValues(id, p.Status, "diesel").Set(f)
 		}
 		if f, ok := p.E5.(float64); ok {
-			e.price.WithLabelValues(id, "e5", p.Status).Set(f)
+			e.price.WithLabelValues(id, p.Status, "e5").Set(f)
 		}
 		if f, ok := p.E10.(float64); ok {
-			e.price.WithLabelValues(id, "e10", p.Status).Set(f)
+			e.price.WithLabelValues(id, p.Status, "e10").Set(f)
 		}
 	}
 
