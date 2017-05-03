@@ -55,11 +55,13 @@ The first step is to grab an API key from the [Tankerkoenig site](https://creati
 Then grab the IDs of the gas stations you want to track. You can use the
 Tankerkoenig Demo site for this.
 The next step is to set the correct flags while running the exporter.
-Use `-api.key` flag to provide your API key and pass a comma seperated list of
-gas station IDs to `-api.stations`.
+Use the `-api.key` flag to provide your API key and pass your geographical
+position with the `-api.lat` and `-api.lng` flags.
 
-**Important:** Keep in mind that the Tankerkoenig API shouldn't be accessed to
-often or your API key might get suspended. Set a high scrape interval, e.g. `10m`.
+**Important:** The exporter runs a background scraper to retrieve data from the
+Tankerkoenig API. If you want to scrape the API more often, use the
+`-api.request-interval` flag to overwrite the default value. But be aware, that
+to frequent requests can lead to the _deauthorization_ of your API key!
 
 **Note:** Since *tankerkoenig* isn't a very handy word, metrics have been
 shortened to `tk_`.
