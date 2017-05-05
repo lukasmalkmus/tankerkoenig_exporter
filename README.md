@@ -55,11 +55,9 @@ Help on flags:
 ```
 
 The first step is to grab an API key from the [Tankerkoenig site](https://creativecommons.tankerkoenig.de/#usage).
-Then grab the IDs of the gas stations you want to track. You can use the
-Tankerkoenig Demo site for this.
-The next step is to set the correct flags while running the exporter.
-Use the `-api.key` flag to provide your API key and pass your geographical
-position with the `-api.lat` and `-api.lng` flags.
+You then need to [find out your latitude and langitude](http://www.latlong.net).
+Use the `-api.key` flag to provide your API key and pass your geographical position
+with the `-api.lat` and `-api.lng` flags.
 
 **Important:** The exporter runs a background scraper to retrieve data from the
 Tankerkoenig API. If you want to scrape the API more often, use the
