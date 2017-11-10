@@ -16,3 +16,6 @@ _vendor-*/
 
 # Dot env files
 .env
+
+# Git folder
+.git

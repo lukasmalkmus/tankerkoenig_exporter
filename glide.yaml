@@ -1,6 +1,0 @@
-package: github.com/lukasmalkmus/tankerkoenig_exporter
-import:
-- package: github.com/prometheus/common
-  subpackages:
-  - version
-- package: github.com/alexruf/tankerkoenig-go
