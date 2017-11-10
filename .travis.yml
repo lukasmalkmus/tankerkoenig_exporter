@@ -5,7 +5,7 @@ go:
   - tip
 
 before_install:
-  - get github.com/golang/dep/...
+  - go get github.com/golang/dep/...
   - go get github.com/mattn/goveralls
 
 install:
