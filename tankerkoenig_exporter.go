@@ -26,7 +26,7 @@ const (
 
 var (
 	apiKey           = kingpin.Flag("api.key", "Personal API key used to authenticate against the tankerkoenig API").String()
-	apiStations      = kingpin.Flag("api.stations", "Comma seperated list of stations").Strings()
+	apiStations      = kingpin.Flag("api.stations", "Comma seperated list of stations").Short('s').Strings()
 	webListenAddress = kingpin.Flag("web.listen-address", "Address on which to expose metrics and web interface").Default(":9386").String()
 	webMetricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics").Default("/metrics").String()
 )
