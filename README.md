@@ -1,12 +1,11 @@
 # lukasmalkmus/tankerkoenig_exporter
 
-> An Tankerkoenig API Exporter for Prometheus. - by **[Lukas Malkmus](https://github.com/lukasmalkmus)**
+> A Tankerkoenig API Exporter for Prometheus. - by **[Lukas Malkmus](https://github.com/lukasmalkmus)**
 
 [![Travis Status][travis_badge]][travis]
 [![Coverage Status][coverage_badge]][coverage]
 [![Go Report][report_badge]][report]
 [![GoDoc][docs_badge]][docs]
-[![Docker Repository on Quay][quay_badge]][quay]
 [![Docker Pulls][hub_badge]][hub]
 [![Latest Release][release_badge]][release]
 [![License][license_badge]][license]
@@ -93,8 +92,6 @@ See [LICENSE](LICENSE) for more information.
 [report_badge]: https://goreportcard.com/badge/github.com/lukasmalkmus/tankerkoenig_exporter
 [docs]: https://godoc.org/github.com/lukasmalkmus/tankerkoenig_exporter
 [docs_badge]: https://godoc.org/github.com/lukasmalkmus/tankerkoenig_exporter?status.svg
-[quay]: https://quay.io/repository/lukasmalkmus/tankerkoenig-exporter
-[quay_badge]: https://quay.io/repository/lukasmalkmus/tankerkoenig-exporter/status
 [hub]: https://hub.docker.com/r/lukasmalkmus/tankerkoenig-exporter
 [hub_badge]: https://img.shields.io/docker/pulls/lukasmalkmus/tankerkoenig-exporter.svg
 [release]: https://github.com/lukasmalkmus/tankerkoenig_exporter/releases
