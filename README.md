@@ -67,7 +67,7 @@ Help on flags:
 #### Using docker
 
 ```bash
-docker run -p 9386:9386 quay.io/lukasmalkmus/tankerkoenig-exporter:v0.4.0 \
+docker run -p 9386:9386 quay.io/lukasmalkmus/tankerkoenig-exporter:v0.5.4 \
         --apiKey="YOUR_API_TOKEN" \
         --apiStations="9646eb5e-b7ae-4205-bdbd-0a64abc46c20,7566fb7a-b7cc-5214-bcad-0a53abd46d14"
 ```
@@ -78,7 +78,7 @@ Feel free to submit PRs or to fill Issues. Every kind of help is appreciated.
 
 ### License
 
-© Lukas Malkmus, 2017
+© Lukas Malkmus, 2018
 
 Distributed under Apache License (`Apache License, Version 2.0`).
 
