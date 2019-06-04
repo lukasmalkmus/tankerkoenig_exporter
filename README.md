@@ -67,8 +67,8 @@ Docker images are now available on [DockerHub]!
 
 ```bash
 docker run -p9386:9386/tcp lukasmalkmus/tankerkoenig-exporter:v0.6.0 \
-        --apiKey="YOUR_API_TOKEN" \
-        --apiStations="9646eb5e-b7ae-4205-bdbd-0a64abc46c20,7566fb7a-b7cc-5214-bcad-0a53abd46d14"
+        --api.key="YOUR_API_TOKEN" \
+        --api.stations="9646eb5e-b7ae-4205-bdbd-0a64abc46c20,7566fb7a-b7cc-5214-bcad-0a53abd46d14"
 ```
 
 ### Contributing
