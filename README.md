@@ -63,6 +63,8 @@ Help on flags:
 
 #### Using docker
 
+Docker images are now available on [DockerHub]!
+
 ```bash
 docker run -p9386:9386/tcp lukasmalkmus/tankerkoenig-exporter:v0.6.0 \
         --apiKey="YOUR_API_TOKEN" \
@@ -86,7 +88,7 @@ See [LICENSE](LICENSE) for more information.
 [Lukas Malkmus]: https://github.com/lukasmalkmus
 [Tankerkoenig site]: https://creativecommons.tankerkoenig.de/#usage
 [TankstellenFinder]: https://creativecommons.tankerkoenig.de/TankstellenFinder/index.html
-[DockerHub]: https://hub.docker.com/r/lukasmalkmus/tankerkoenig_exporter
+[DockerHub]: https://hub.docker.com/r/lukasmalkmus/tankerkoenig-exporter
 
 <!-- Badges -->
 [travis]: https://travis-ci.com/lukasmalkmus/tankerkoenig_exporter
@@ -97,5 +99,5 @@ See [LICENSE](LICENSE) for more information.
 [release_badge]: https://img.shields.io/github/release/lukasmalkmus/tankerkoenig_exporter.svg
 [license]: https://opensource.org/licenses/Apache-2.0
 [license_badge]: https://img.shields.io/badge/license-Apache-blue.svg
-[docker]: https://hub.docker.com/r/carlosedp/arm_exporter
-[docker_badge]: https://img.shields.io/docker/pulls/carlosedp/arm_exporter.svg
+[docker]: https://hub.docker.com/r/lukasmalkmus/tankerkoenig-exporter
+[docker_badge]: https://img.shields.io/docker/pulls/lukasmalkmus/tankerkoenig_exporter.svg
