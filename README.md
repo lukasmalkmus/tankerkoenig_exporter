@@ -100,4 +100,4 @@ See [LICENSE](LICENSE) for more information.
 [license]: https://opensource.org/licenses/Apache-2.0
 [license_badge]: https://img.shields.io/badge/license-Apache-blue.svg
 [docker]: https://hub.docker.com/r/lukasmalkmus/tankerkoenig-exporter
-[docker_badge]: https://img.shields.io/docker/pulls/lukasmalkmus/tankerkoenig_exporter.svg
+[docker_badge]: https://img.shields.io/docker/pulls/lukasmalkmus/tankerkoenig-exporter.svg
