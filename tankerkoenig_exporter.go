@@ -153,8 +153,7 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.open.Describe(ch)
 }
 
-// Collect the stats from the configured ArmA 3 server and deliver them as
-// Prometheus metrics.
+// Collect the stats from the Tankerkoenig API.
 // Implements prometheus.Collector.
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	// Protect metrics from concurrent collects.
