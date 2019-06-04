@@ -1,3 +1,16 @@
+// Copyright 2019 Lukas Malkmus
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package main
 
 import (
@@ -226,11 +239,6 @@ func (e *Exporter) scrape() error {
 }
 
 func main() {
-	os.Exit(Main())
-}
-
-// Main manages the complete application lifecycle, from startup to shutdown.
-func Main() int {
 	log.AddFlags(kingpin.CommandLine)
 	kingpin.Version(version.Print("tankerkoenig_exporter"))
 	kingpin.HelpFlag.Short('h')
@@ -243,64 +251,68 @@ func Main() int {
 	// Create a new Tankerkoenig exporter. Exit if an error is returned.
 	exporter, err := New(*apiKey, *apiStations)
 	if err != nil {
-		log.Error(err)
-		return 0
+		log.Fatal(err)
 	}
 
 	// Register Tankerkoenig and the collector for version information.
 	// Unregister Go and Process collector which are registered by default.
-	prometheus.MustRegister(exporter)
-	prometheus.MustRegister(version.NewCollector("tk_exporter"))
-	prometheus.Unregister(prometheus.NewGoCollector())
-	prometheus.Unregister(prometheus.NewProcessCollector(os.Getpid(), ""))
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(exporter)
+	reg.MustRegister(version.NewCollector("tankerkoenig_exporter"))
 
 	// Setup router and handlers.
-	router := http.NewServeMux()
-	metricsHandler := promhttp.HandlerFor(prometheus.DefaultGatherer,
-		promhttp.HandlerOpts{ErrorLog: log.NewErrorLogger()})
-	// TODO: InstrumentHandler is depracted. Additional tools will be available
-	// soon in the promhttp package.
-	//router.Handle(*webMetricsPath, prometheus.InstrumentHandler("prometheus", metricsHandler))
-	router.Handle(*webMetricsPath, metricsHandler)
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux := http.NewServeMux()
+	metricsHandler := promhttp.HandlerFor(reg, promhttp.HandlerOpts{
+		ErrorLog:      log.NewErrorLogger(),
+		ErrorHandling: promhttp.HTTPErrorOnError,
+	})
+	mux.Handle(*webMetricsPath, metricsHandler)
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(landingPage))
 	})
 
 	// Setup webserver.
 	srv := &http.Server{
-		Addr:           *webListenAddress,
-		Handler:        router,
-		ReadTimeout:    5 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		IdleTimeout:    60 * time.Second,
-		MaxHeaderBytes: 1 << 20,
-		ErrorLog:       log.NewErrorLogger(),
+		Addr:         *webListenAddress,
+		Handler:      mux,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
+		ErrorLog:     log.NewErrorLogger(),
 	}
 
 	// Listen for termination signals.
 	term := make(chan os.Signal, 1)
-	webErr := make(chan error)
+	defer close(term)
 	signal.Notify(term, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(term)
 
-	// Run webserver in a separate goroutine.
+	// Run webserver in a separate go-routine.
 	log.Infoln("Listening on", *webListenAddress)
-	go func() { webErr <- srv.ListenAndServe() }()
+	webErr := make(chan error)
+	defer close(webErr)
+	go func() {
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			webErr <- err
+		}
+	}()
 
 	// Wait for a termination signal and shut down gracefully, but wait no
 	// longer than 5 seconds before halting.
+	var (
+		ctx    context.Context
+		cancel context.CancelFunc
+	)
 	select {
 	case <-term:
 		log.Warn("Received SIGTERM, exiting gracefully...")
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := srv.Shutdown(ctx); err != nil {
-			log.Warnln("Error shutting down http server:", err)
+			log.Error(err)
 		}
 	case err := <-webErr:
-		log.Errorln("Error starting http server, exiting gracefully:", err)
+		log.Error("Error starting web server, exiting gracefully:", err)
 	}
-
 	log.Info("See you next time!")
-
-	return 0
 }
