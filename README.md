@@ -66,8 +66,7 @@ Help on flags:
 Docker images are now available on [DockerHub]!
 
 ```bash
-docker run -p9386:9386/tcp lukasmalkmus/tankerkoenig-exporter:v0.6.0 \
-        --api.key="YOUR_API_TOKEN" \
+docker run -p9386:9386/tcp -e TANKERKOENIG_API_KEY="YOUR_API_TOKEN" lukasmalkmus/tankerkoenig-exporter:v0.7.0 \
         --api.stations="9646eb5e-b7ae-4205-bdbd-0a64abc46c20,7566fb7a-b7cc-5214-bcad-0a53abd46d14"
 ```
 

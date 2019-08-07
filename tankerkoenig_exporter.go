@@ -38,7 +38,6 @@ const (
 )
 
 var (
-	apiKey           = kingpin.Flag("api.key", "Personal API key used to authenticate against the tankerkoenig API").String()
 	apiStations      = kingpin.Flag("api.stations", "ID of a station. Flag can be reused multiple times.").Short('s').Strings()
 	webListenAddress = kingpin.Flag("web.listen-address", "Address on which to expose metrics and web interface").Default(":9386").String()
 	webMetricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics").Default("/metrics").String()
@@ -69,8 +68,8 @@ type Exporter struct {
 	totalScrapes, failedScrapes prometheus.Counter
 
 	// Tankerkoenig metrics.
-	price *prometheus.GaugeVec
-	open  *prometheus.GaugeVec
+	priceDesc *prometheus.Desc
+	openDesc  *prometheus.Desc
 }
 
 // New returns a new, initialized Tankerkoenig Exporter.
@@ -115,18 +114,18 @@ func New(apiKey string, apiStations []string) (*Exporter, error) {
 			Name:      "scrape_failures_total",
 			Help:      "Total amount of scrape failures.",
 		}),
-		price: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: "station",
-			Name:      "price_euro",
-			Help:      "Gas prices in EURO (€).",
-		}, []string{"station_id", "station_name", "product"}),
-		open: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: namespace,
-			Subsystem: "station",
-			Name:      "open",
-			Help:      "Status of the station. 1 for OPEN, 0 for CLOSED.",
-		}, []string{"station_id", "station_name"}),
+		priceDesc: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "station", "price_euro"),
+			"Gas prices in EURO (€).",
+			[]string{"station_id", "station_name", "product"},
+			nil,
+		),
+		openDesc: prometheus.NewDesc(
+			prometheus.BuildFQName(namespace, "station", "open"),
+			"Status of the station. 1 for OPEN, 0 for CLOSED.",
+			[]string{"station_id", "station_name"},
+			nil,
+		),
 	}
 
 	// Retrieve initial station details to validate integrity of user provided
@@ -149,8 +148,8 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.scrapeDuration.Describe(ch)
 	e.failedScrapes.Describe(ch)
 	e.totalScrapes.Describe(ch)
-	e.price.Describe(ch)
-	e.open.Describe(ch)
+	ch <- e.priceDesc
+	ch <- e.openDesc
 }
 
 // Collect the stats from the Tankerkoenig API.
@@ -160,11 +159,8 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
-	// Reset metrics.
-	e.reset()
-
 	// Scrape metrics from Tankerkoenig API.
-	if err := e.scrape(); err != nil {
+	if err := e.scrape(ch); err != nil {
 		log.Error(err)
 	}
 
@@ -173,18 +169,10 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.scrapeDuration.Collect(ch)
 	e.failedScrapes.Collect(ch)
 	e.totalScrapes.Collect(ch)
-	e.price.Collect(ch)
-	e.open.Collect(ch)
-}
-
-// reset resets the vector metrics.
-func (e *Exporter) reset() {
-	e.open.Reset()
-	e.price.Reset()
 }
 
 // scrape performs the API call and meassures its duration.
-func (e *Exporter) scrape() error {
+func (e *Exporter) scrape(ch chan<- prometheus.Metric) error {
 	// Meassure scrape duration.
 	defer func(begun time.Time) {
 		e.scrapeDuration.Set(time.Since(begun).Seconds())
@@ -214,20 +202,20 @@ func (e *Exporter) scrape() error {
 		if stat := p.Status; stat == "no prices" {
 			continue
 		} else if stat == "open" {
-			e.open.WithLabelValues(id, name).Set(1.0)
+			ch <- prometheus.MustNewConstMetric(e.openDesc, prometheus.GaugeValue, 1.0, id, name)
 		} else {
-			e.open.WithLabelValues(id, name).Set(0.0)
+			ch <- prometheus.MustNewConstMetric(e.openDesc, prometheus.GaugeValue, 0.0, id, name)
 		}
 
 		// Station prices.
-		if f, ok := p.Diesel.(float64); ok {
-			e.price.WithLabelValues(id, name, "diesel").Set(f)
+		if v, ok := p.Diesel.(float64); ok {
+			ch <- prometheus.MustNewConstMetric(e.priceDesc, prometheus.GaugeValue, v, id, name, "diesel")
 		}
-		if f, ok := p.E5.(float64); ok {
-			e.price.WithLabelValues(id, name, "e5").Set(f)
+		if v, ok := p.E5.(float64); ok {
+			ch <- prometheus.MustNewConstMetric(e.priceDesc, prometheus.GaugeValue, v, id, name, "e5")
 		}
-		if f, ok := p.E10.(float64); ok {
-			e.price.WithLabelValues(id, name, "e10").Set(f)
+		if v, ok := p.E10.(float64); ok {
+			ch <- prometheus.MustNewConstMetric(e.priceDesc, prometheus.GaugeValue, v, id, name, "e10")
 		}
 	}
 
@@ -248,7 +236,7 @@ func main() {
 	log.Info("Build context", version.BuildContext())
 
 	// Create a new Tankerkoenig exporter. Exit if an error is returned.
-	exporter, err := New(*apiKey, *apiStations)
+	exporter, err := New(os.Getenv("TANKERKOENIG_API_KEY"), *apiStations)
 	if err != nil {
 		log.Fatal(err)
 	}
