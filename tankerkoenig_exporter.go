@@ -16,7 +16,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -75,16 +74,7 @@ type Exporter struct {
 // New returns a new, initialized Tankerkoenig Exporter.
 func New(apiKey string, apiStations []string) (*Exporter, error) {
 	httpClient := &http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyFromEnvironment,
-			Dial: (&net.Dialer{
-				Timeout:   3 * time.Second,
-				KeepAlive: 30 * time.Second,
-			}).Dial,
-			ExpectContinueTimeout: 1 * time.Second,
-			ResponseHeaderTimeout: 3 * time.Second,
-			TLSHandshakeTimeout:   3 * time.Second,
-		},
+		Timeout: time.Second * 15,
 	}
 
 	e := &Exporter{
@@ -133,8 +123,11 @@ func New(apiKey string, apiStations []string) (*Exporter, error) {
 	for _, v := range apiStations {
 		station, _, err := e.client.Station.Detail(v)
 		if err != nil {
-			return nil, fmt.Errorf("Couldn't retrieve station details for station %s: %s", v, err)
+			return nil, fmt.Errorf("couldn't retrieve station details for station %s: %w", v, err)
+		} else if station.Id == "" {
+			return nil, fmt.Errorf("station %q was not found", v)
 		}
+		fmt.Println(station)
 		e.stations[v] = station
 	}
 
@@ -235,8 +228,14 @@ func main() {
 	log.Info("Starting tankerkoenig_exporter", version.Info())
 	log.Info("Build context", version.BuildContext())
 
+	// Check if API key is present
+	apiKey := os.Getenv("TANKERKOENIG_API_KEY")
+	if apiKey == "" {
+		log.Fatal("No API key present. Please set TANKERKOENIG_API_KEY!")
+	}
+
 	// Create a new Tankerkoenig exporter. Exit if an error is returned.
-	exporter, err := New(os.Getenv("TANKERKOENIG_API_KEY"), *apiStations)
+	exporter, err := New(apiKey, *apiStations)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -262,8 +261,8 @@ func main() {
 	srv := &http.Server{
 		Addr:         *webListenAddress,
 		Handler:      mux,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
 		ErrorLog:     log.NewErrorLogger(),
 	}
