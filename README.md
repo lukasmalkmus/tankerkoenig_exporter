@@ -67,8 +67,7 @@ Docker images are now available on [DockerHub]!
 
 ```bash
 # .env file contains TANKERKOENIG_API_KEY="YOUR_API_TOKEN"
-docker run -p9386:9386/tcp --env-file=.env lukasmalkmus/tankerkoenig-exporter:v0.8.0 \
-        --api.stations="9646eb5e-b7ae-4205-bdbd-0a64abc46c20,7566fb7a-b7cc-5214-bcad-0a53abd46d14"
+docker run -p9386:9386/tcp --env-file=.env lukasmalkmus/tankerkoenig-exporter:v0.8.1 --api.stations="51d4b55e-a095-1aa0-e100-80009459e03a"
 ```
 
 ### Contributing
