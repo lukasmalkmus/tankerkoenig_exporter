@@ -127,7 +127,6 @@ func New(apiKey string, apiStations []string) (*Exporter, error) {
 		} else if station.Id == "" {
 			return nil, fmt.Errorf("station %q was not found", v)
 		}
-		fmt.Println(station)
 		e.stations[v] = station
 	}
 
