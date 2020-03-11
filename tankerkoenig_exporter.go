@@ -19,11 +19,13 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/alexruf/tankerkoenig-go"
+	"github.com/mmcloughlin/geohash"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/log"
@@ -107,13 +109,13 @@ func New(apiKey string, apiStations []string) (*Exporter, error) {
 		priceDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "station", "price_euro"),
 			"Gas prices in EURO (€).",
-			[]string{"station_id", "station_name", "product"},
+			[]string{"station_id", "station_name", "address", "city", "geohash", "station_brand", "product"},
 			nil,
 		),
 		openDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "station", "open"),
 			"Status of the station. 1 for OPEN, 0 for CLOSED.",
-			[]string{"station_id", "station_name"},
+			[]string{"station_id", "station_name", "address", "city", "geohash", "station_brand"},
 			nil,
 		),
 	}
@@ -190,24 +192,29 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) error {
 		s := e.stations[id]
 		name := fmt.Sprintf("%s (%s)", s.Name, s.Place)
 
+		geohash := geohash.Encode(s.Lat, s.Lng)
+		// string manipulation because of capslock names
+		address := strings.TrimSpace(fmt.Sprintf("%v %v", strings.TrimSpace(strings.Title(strings.ToLower(s.Street))), strings.TrimSpace(s.HouseNumber)))
+		city := strings.TrimSpace(strings.Title(strings.ToLower(s.Place)))
+
 		// Station status.
 		if stat := p.Status; stat == "no prices" {
 			continue
 		} else if stat == "open" {
-			ch <- prometheus.MustNewConstMetric(e.openDesc, prometheus.GaugeValue, 1.0, id, name)
+			ch <- prometheus.MustNewConstMetric(e.openDesc, prometheus.GaugeValue, 1.0, id, name, address, city, geohash, s.Brand)
 		} else {
-			ch <- prometheus.MustNewConstMetric(e.openDesc, prometheus.GaugeValue, 0.0, id, name)
+			ch <- prometheus.MustNewConstMetric(e.openDesc, prometheus.GaugeValue, 0.0, id, name, address, city, geohash, s.Brand)
 		}
 
 		// Station prices.
 		if v, ok := p.Diesel.(float64); ok {
-			ch <- prometheus.MustNewConstMetric(e.priceDesc, prometheus.GaugeValue, v, id, name, "diesel")
+			ch <- prometheus.MustNewConstMetric(e.priceDesc, prometheus.GaugeValue, v, id, name, address, city, geohash, s.Brand, "diesel")
 		}
 		if v, ok := p.E5.(float64); ok {
-			ch <- prometheus.MustNewConstMetric(e.priceDesc, prometheus.GaugeValue, v, id, name, "e5")
+			ch <- prometheus.MustNewConstMetric(e.priceDesc, prometheus.GaugeValue, v, id, name, address, city, geohash, s.Brand, "e5")
 		}
 		if v, ok := p.E10.(float64); ok {
-			ch <- prometheus.MustNewConstMetric(e.priceDesc, prometheus.GaugeValue, v, id, name, "e10")
+			ch <- prometheus.MustNewConstMetric(e.priceDesc, prometheus.GaugeValue, v, id, name, address, city, geohash, s.Brand, "e10")
 		}
 	}
 
