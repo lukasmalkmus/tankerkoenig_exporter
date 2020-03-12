@@ -67,7 +67,7 @@ Docker images are now available on [DockerHub]!
 
 ```bash
 # .env file contains TANKERKOENIG_API_KEY="YOUR_API_TOKEN"
-docker run -p9386:9386/tcp --env-file=.env lukasmalkmus/tankerkoenig-exporter:v0.8.1 --api.stations="51d4b55e-a095-1aa0-e100-80009459e03a"
+docker run -p9386:9386/tcp --env-file=.env lukasmalkmus/tankerkoenig-exporter:v0.9.0 --api.stations="51d4b55e-a095-1aa0-e100-80009459e03a"
 ```
 
 ### Contributing
@@ -76,7 +76,7 @@ Feel free to submit PRs or to fill Issues. Every kind of help is appreciated.
 
 ### License
 
-© Lukas Malkmus, 2019
+© Lukas Malkmus, 2020
 
 Distributed under Apache License (`Apache License, Version 2.0`).
 

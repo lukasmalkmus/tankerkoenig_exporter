@@ -16,6 +16,7 @@ package main
 import (
 	"context"
 	"fmt"
+	stdlog "log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -25,23 +26,24 @@ import (
 	"time"
 
 	"github.com/alexruf/tankerkoenig-go"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/mmcloughlin/geohash"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/log"
+	"github.com/prometheus/common/promlog"
+	"github.com/prometheus/common/promlog/flag"
 	"github.com/prometheus/common/version"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-const (
-	// namespace for all metrics of this exporter.
-	namespace = "tk"
-)
+// namespace for all metrics of this exporter.
+const namespace = "tk"
 
 var (
-	apiStations      = kingpin.Flag("api.stations", "ID of a station. Flag can be reused multiple times.").Short('s').Strings()
-	webListenAddress = kingpin.Flag("web.listen-address", "Address on which to expose metrics and web interface").Default(":9386").String()
-	webMetricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics").Default("/metrics").String()
+	apiStations   = kingpin.Flag("api.stations", "ID of a station. Flag can be reused multiple times.").Short('s').Strings()
+	listenAddress = kingpin.Flag("web.listen-address", "Address on which to expose metrics and web interface").Default(":9386").String()
+	metricsPath   = kingpin.Flag("web.telemetry-path", "Path under which to expose metrics").Default("/metrics").String()
 )
 
 // landingPage contains the HTML served at '/'.
@@ -52,7 +54,7 @@ var landingPage = `<html>
 	<body>
 		<h1>Tankerkoenig Exporter</h1>
 		<p>
-		<a href=` + *webMetricsPath + `>Metrics</a>
+		<a href=` + *metricsPath + `>Metrics</a>
 		</p>
 	</body>
 </html>`
@@ -60,6 +62,8 @@ var landingPage = `<html>
 // Exporter collects stats from the Tankerkoenig API and exports them using the
 // prometheus client library.
 type Exporter struct {
+	logger log.Logger
+
 	mutex    sync.RWMutex
 	client   *tankerkoenig.Client
 	stations map[string]tankerkoenig.Station
@@ -73,13 +77,15 @@ type Exporter struct {
 	openDesc  *prometheus.Desc
 }
 
-// New returns a new, initialized Tankerkoenig Exporter.
-func New(apiKey string, apiStations []string) (*Exporter, error) {
+// NewExporter returns a new, initialized Tankerkoenig Exporter.
+func NewExporter(logger log.Logger, apiKey string, apiStations []string) (*Exporter, error) {
 	httpClient := &http.Client{
 		Timeout: time.Second * 15,
 	}
 
 	e := &Exporter{
+		logger: logger,
+
 		client:   tankerkoenig.NewClient(apiKey, httpClient),
 		stations: make(map[string]tankerkoenig.Station, len(apiStations)),
 
@@ -155,7 +161,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 
 	// Scrape metrics from Tankerkoenig API.
 	if err := e.scrape(ch); err != nil {
-		log.Error(err)
+		level.Error(e.logger).Log("msg", "Can't scrape Tankerkoenig API", "err", err)
 	}
 
 	// Collect metrics.
@@ -225,25 +231,28 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) error {
 }
 
 func main() {
-	log.AddFlags(kingpin.CommandLine)
-	kingpin.Version(version.Print("tankerkoenig_exporter"))
+	promlogConfig := &promlog.Config{}
+	flag.AddFlags(kingpin.CommandLine, promlogConfig)
 	kingpin.HelpFlag.Short('h')
 	kingpin.Parse()
+	logger := promlog.New(promlogConfig)
 
 	// Print build context and version.
-	log.Info("Starting tankerkoenig_exporter", version.Info())
-	log.Info("Build context", version.BuildContext())
+	level.Info(logger).Log("msg", "Starting tankerkoenig_exporter", "version", version.Info())
+	level.Info(logger).Log("msg", "Build context", "context", version.BuildContext())
 
 	// Check if API key is present
 	apiKey := os.Getenv("TANKERKOENIG_API_KEY")
 	if apiKey == "" {
-		log.Fatal("No API key present. Please set TANKERKOENIG_API_KEY!")
+		level.Error(logger).Log("msg", "No API key present. Please set TANKERKOENIG_API_KEY!")
+		os.Exit(1)
 	}
 
 	// Create a new Tankerkoenig exporter. Exit if an error is returned.
-	exporter, err := New(apiKey, *apiStations)
+	exporter, err := NewExporter(logger, apiKey, *apiStations)
 	if err != nil {
-		log.Fatal(err)
+		level.Error(logger).Log("msg", "Can't create Tankerkoenig exporter", "err", err)
+		os.Exit(1)
 	}
 
 	// Register Tankerkoenig and the collector for version information.
@@ -252,25 +261,27 @@ func main() {
 	reg.MustRegister(exporter)
 	reg.MustRegister(version.NewCollector("tankerkoenig_exporter"))
 
+	stdlibLogger := stdlog.New(log.NewStdlibAdapter(logger), "", 0)
+
 	// Setup router and handlers.
 	mux := http.NewServeMux()
 	metricsHandler := promhttp.HandlerFor(reg, promhttp.HandlerOpts{
-		ErrorLog:      log.NewErrorLogger(),
+		ErrorLog:      stdlibLogger,
 		ErrorHandling: promhttp.HTTPErrorOnError,
 	})
-	mux.Handle(*webMetricsPath, metricsHandler)
+	mux.Handle(*metricsPath, metricsHandler)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(landingPage))
 	})
 
 	// Setup webserver.
 	srv := &http.Server{
-		Addr:         *webListenAddress,
+		Addr:         *listenAddress,
 		Handler:      mux,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
-		ErrorLog:     log.NewErrorLogger(),
+		ErrorLog:     stdlibLogger,
 	}
 
 	// Listen for termination signals.
@@ -280,7 +291,7 @@ func main() {
 	defer signal.Stop(term)
 
 	// Run webserver in a separate go-routine.
-	log.Infoln("Listening on", *webListenAddress)
+	level.Info(logger).Log("msg", "Listening on address", "address", *listenAddress)
 	webErr := make(chan error)
 	defer close(webErr)
 	go func() {
@@ -297,14 +308,13 @@ func main() {
 	)
 	select {
 	case <-term:
-		log.Warn("Received SIGTERM, exiting gracefully...")
+		level.Warn(logger).Log("msg", "Received SIGTERM, exiting gracefully...")
 		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		if err := srv.Shutdown(ctx); err != nil {
-			log.Error(err)
+			level.Error(logger).Log("msg", "Error shutting down HTTP server", "err", err)
 		}
 	case err := <-webErr:
-		log.Error("Error starting web server, exiting gracefully:", err)
+		level.Error(logger).Log("msg", "Error starting HTTP server", "err", err)
 	}
-	log.Info("See you next time!")
 }
