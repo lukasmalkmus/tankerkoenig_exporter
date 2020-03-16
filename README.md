@@ -19,7 +19,7 @@
 
 ### Introduction
 
-The *tankerkoenig_exporter* is a simple server that scrapes the Tankerkoenig API
+The _tankerkoenig_exporter_ is a simple server that scrapes the Tankerkoenig API
 for gas station prices and exports them via HTTP for Prometheus consumption.
 
 ### Usage
@@ -31,12 +31,12 @@ find some station IDs. Either use the API yourself or the [TankstellenFinder].
 performs a direct API call and to frequent requests can lead to the
 _deauthorization_ of your API key!
 
-**Note:** Since *tankerkoenig* isn't a very handy word, the metric namespace is
+**Note:** Since _tankerkoenig_ isn't a very handy word, the metric namespace is
 `tk_`.
 
 #### Installation
 
-The easiest way to run the *tankerkoenig* is by grabbing the latest binary from
+The easiest way to run the _tankerkoenig_ is by grabbing the latest binary from
 the [release page][release].
 
 ##### Building from source
@@ -67,7 +67,7 @@ Docker images are now available on [DockerHub]!
 
 ```bash
 # .env file contains TANKERKOENIG_API_KEY="YOUR_API_TOKEN"
-docker run -p9386:9386/tcp --env-file=.env lukasmalkmus/tankerkoenig-exporter:v0.9.0 --api.stations="51d4b55e-a095-1aa0-e100-80009459e03a"
+docker run -p9386:9386/tcp --env-file=.env lukasmalkmus/tankerkoenig-exporter:v0.9.1 --api.stations="51d4b55e-a095-1aa0-e100-80009459e03a"
 ```
 
 ### Contributing
@@ -83,13 +83,15 @@ Distributed under Apache License (`Apache License, Version 2.0`).
 See [LICENSE](LICENSE) for more information.
 
 <!-- Links -->
+
 [go mod]: https://golang.org/cmd/go/#hdr-Module_maintenance
-[Lukas Malkmus]: https://github.com/lukasmalkmus
-[Tankerkoenig site]: https://creativecommons.tankerkoenig.de/#usage
-[TankstellenFinder]: https://creativecommons.tankerkoenig.de/TankstellenFinder/index.html
-[DockerHub]: https://hub.docker.com/r/lukasmalkmus/tankerkoenig-exporter
+[lukas malkmus]: https://github.com/lukasmalkmus
+[tankerkoenig site]: https://creativecommons.tankerkoenig.de/#usage
+[tankstellenfinder]: https://creativecommons.tankerkoenig.de/TankstellenFinder/index.html
+[dockerhub]: https://hub.docker.com/r/lukasmalkmus/tankerkoenig-exporter
 
 <!-- Badges -->
+
 [travis]: https://travis-ci.com/lukasmalkmus/tankerkoenig_exporter
 [travis_badge]: https://travis-ci.com/lukasmalkmus/tankerkoenig_exporter.svg
 [report]: https://goreportcard.com/report/github.com/lukasmalkmus/tankerkoenig_exporter

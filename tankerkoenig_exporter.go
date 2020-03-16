@@ -185,12 +185,27 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) error {
 		ids = append(ids, id)
 	}
 
-	// Retrieve prices for specified stations.
-	prices, _, err := e.client.Prices.Get(ids)
-	if err != nil {
-		e.up.Set(0)
-		e.failedScrapes.Inc()
-		return err
+	// Retrieve prices for specified stations. Since the API will only allow for
+	// ten stations to be queried with one request, we work them of in batches
+	// of ten.
+	const batchSize = 10
+	prices := make(map[string]tankerkoenig.Price, len(ids))
+	for i := 0; i < len(ids); i += batchSize {
+		j := i + batchSize
+		if j > len(ids) {
+			j = len(ids)
+		}
+
+		batchPrices, _, err := e.client.Prices.Get(ids[i:j])
+		if err != nil {
+			e.up.Set(0)
+			e.failedScrapes.Inc()
+			return err
+		}
+
+		for k, v := range batchPrices {
+			prices[k] = v
+		}
 	}
 
 	// Set metric values.
