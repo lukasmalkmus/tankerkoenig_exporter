@@ -2,7 +2,6 @@
 
 [![Workflow][workflow_badge]][workflow]
 [![Latest Release][release_badge]][release]
-[![Docker][docker_badge]][docker]
 [![License][license_badge]][license]
 
 ---
@@ -63,11 +62,11 @@ stations to scrape.
 
 ### Using docker
 
-Docker images are available on the [GitHub Package Registry] and [DockerHub].
+Docker images are available on the [GitHub Package Registry].
 
 ```bash
 # .env file contains TANKERKOENIG_API_KEY="YOUR_API_KEY"
-docker run -p9386:9386/tcp --env-file=.env lukasmalkmus/tankerkoenig-exporter:v0.10.0 --tankerkoenig.stations="51d4b55e-a095-1aa0-e100-80009459e03a"
+docker run -p9386:9386/tcp --env-file=.env ghcr.io/lukasmalkmus/tankerkoenig-exporter:0.10.0 --tankerkoenig.stations="51d4b55e-a095-1aa0-e100-80009459e03a"
 ```
 
 ## Contributing
@@ -87,7 +86,6 @@ See [LICENSE](LICENSE) for more information.
 [tankerkoenig api]: https://creativecommons.tankerkoenig.de/#usage
 [tankerkoenig site]: https://creativecommons.tankerkoenig.de/#usage
 [tankstellen finder]: https://creativecommons.tankerkoenig.de/TankstellenFinder/index.html
-[dockerhub]: https://hub.docker.com/r/lukasmalkmus/tankerkoenig-exporter
 [github package registry]: https://github.com/users/lukasmalkmus/packages?repo_name=tankerkoenig_exporter
 
 <!-- Badges -->
@@ -98,5 +96,3 @@ See [LICENSE](LICENSE) for more information.
 [release_badge]: https://img.shields.io/github/release/lukasmalkmus/tankerkoenig_exporter.svg
 [license]: https://opensource.org/licenses/Apache-2.0
 [license_badge]: https://img.shields.io/badge/license-Apache-blue.svg
-[docker]: https://hub.docker.com/r/lukasmalkmus/tankerkoenig-exporter
-[docker_badge]: https://img.shields.io/docker/pulls/lukasmalkmus/tankerkoenig-exporter.svg

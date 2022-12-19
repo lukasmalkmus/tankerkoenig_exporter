@@ -124,10 +124,6 @@ dockers:
   - ids: 
      - docker
     image_templates:
-      - "docker.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}"
-      - "docker.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}"
-      - "docker.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
-      - "docker.io/lukasmalkmus/tankerkoenig_exporter:latest"
       - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}"
       - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}"
       - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
