@@ -1,0 +1,147 @@
+project_name: tankerkoenig_exporter
+
+builds:
+  - <<: &build_defaults
+      binary: tankerkoenig_exporter
+      main: ./cmd/tankerkoenig_exporter
+      env:
+        - CGO_ENABLED=0
+      tags:
+        - osusergo
+        - netgo
+        - static_build
+      flags:
+        - -buildvcs=false
+        - -buildmode=pie
+        - -installsuffix=cgo
+        - -trimpath
+      ldflags:
+        - -s -w -extldflags "-fno-PIC -static -Wl -z now -z relro"
+        - -X github.com/prometheus/common/version.Version={{ .Version }}
+        - -X github.com/prometheus/common/version.Revision={{ .ShortCommit }}
+        - -X github.com/prometheus/common/version.Branch={{ .Branch }}
+        - -X github.com/prometheus/common/version.BuildUser=goreleaser
+        - -X github.com/prometheus/common/version.BuildDate={{ .CommitDate }}
+      mod_timestamp: "{{ .CommitTimestamp }}"
+    id: darwin
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+  - <<: *build_defaults
+    id: linux
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    
+  - <<: *build_defaults
+    id: linux-no-pie
+    flags:
+      - -buildvcs=false
+      - -buildmode=exe
+      - -installsuffix=cgo
+      - -trimpath
+    goos:
+      - linux
+    goarch:
+      - arm
+      - 386
+    goarm:
+      - 6
+      - 7
+
+  - <<: *build_defaults
+    id: docker
+    flags:
+      - -buildvcs=false
+      - -buildmode=exe
+      - -installsuffix=cgo
+      - -trimpath
+    goos:
+      - linux
+    goarch:
+      - amd64
+
+  - <<: *build_defaults
+    id: windows
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - 386
+
+archives:
+  - <<: &archive_defaults
+      name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+    id: nix
+    builds:
+      - darwin
+      - linux
+      - linux-no-pie
+    wrap_in_directory: true
+    format: tar.gz
+    files:
+      - LICENSE
+      - README.md
+  - <<: *archive_defaults
+    id: windows
+    builds:
+      - windows
+    wrap_in_directory: false
+    format: zip
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  use: github-native
+
+milestones:
+  - repo:
+      owner: lukasmalkmus
+      name: tankerkoenig_exporter
+    close: true
+    fail_on_error: false
+
+release:
+  github:
+    owner: lukasmalkmus
+    name: tankerkoenig_exporter
+  prerelease: auto
+  name_template: Tankerkoenig API Exporter v{{ .Version }}
+
+dockers:
+  - ids: 
+     - docker
+    image_templates:
+      - "docker.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}"
+      - "docker.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}"
+      - "docker.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+      - "docker.io/lukasmalkmus/tankerkoenig_exporter:latest"
+      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}"
+      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}"
+      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:latest"
+    build_flag_templates:
+      - --platform=linux/amd64
+      - --label=org.opencontainers.image.title={{ .ProjectName }}
+      - --label=org.opencontainers.image.description={{ .ProjectName }}
+      - --label=org.opencontainers.image.url=https://github.com/lukasmalkmus/tankerkoenig_exporter
+      - --label=org.opencontainers.image.source=https://github.com/lukasmalkmus/tankerkoenig_exporter
+      - --label=org.opencontainers.image.documentation=https://github.com/lukasmalkmus/tankerkoenig_exporter
+      - --label=org.opencontainers.image.licenses=Apache 2.0
+      - --label=org.opencontainers.image.author=Lukas Malkmus <mail@lukasmalkmus.com>
+      - --label=org.opencontainers.image.created={{ .Date }}
+      - --label=org.opencontainers.image.revision={{ .FullCommit }}
+      - --label=org.opencontainers.image.version={{ .Version }}
+      - --label=org.opencontainers.image.vendor=Lukas Malkmus
