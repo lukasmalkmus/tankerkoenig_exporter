@@ -1,82 +1,82 @@
-# lukasmalkmus/tankerkoenig_exporter
+# Tankerkoenig API Exporter for Prometheus
 
-> A Tankerkoenig API Exporter for Prometheus. - by **[Lukas Malkmus]**
-
-[![Travis Status][travis_badge]][travis]
-[![Go Report][report_badge]][report]
+[![Workflow][workflow_badge]][workflow]
 [![Latest Release][release_badge]][release]
-[![License][license_badge]][license]
 [![Docker][docker_badge]][docker]
+[![License][license_badge]][license]
 
 ---
 
-## Table of Contents
+## Introduction
 
-1. [Introduction](#introduction)
-2. [Usage](#usage)
-3. [Contributing](#contributing)
-4. [License](#license)
+The _Tankerkoenig API Exporter_ is a simple server that scrapes the
+[Tankerkoenig API] for gas station prices and exports them via HTTP for
+Prometheus consumption.
 
-### Introduction
+## Usage
 
-The _tankerkoenig_exporter_ is a simple server that scrapes the Tankerkoenig API
-for gas station prices and exports them via HTTP for Prometheus consumption.
+The first step is to grab an API key from the [Tankerkoenig site].
 
-### Usage
+The exporter supports two different modes of operation:
 
-The first step is to grab an API key from the [Tankerkoenig site]. After that
-find some station IDs. Either use the API yourself or the [TankstellenFinder].
+1. **Geo-Mode**: The exporter will scrape all stations in a given radius around
+   a given location.
+2. **Station-Mode**: The exporter will scrape only the stations given by their
+   IDs. To get station IDs, either use the API yourself or checkout the
+   [Tankstellen Finder].
 
-**Important:** Be advised to set a high scrape interval (e.g. 5min). Each scrape
-performs a direct API call and to frequent requests can lead to the
-_deauthorization_ of your API key!
+**Important:** Be advised to set a high scrape interval (e.g. 5 minutes). Each
+scrape performs an API call and to frequent requests can lead to the
+**deauthorization** of your API key!
 
 **Note:** Since _tankerkoenig_ isn't a very handy word, the metric namespace is
-`tk_`.
+`tk`.
 
-#### Installation
+### Installation
 
-The easiest way to run the _tankerkoenig_ is by grabbing the latest binary from
-the [release page][release].
+The easiest way to run the exporter is by grabbing the latest binary from the
+[release page][release].
 
-##### Building from source
+### Using the application
 
-This project uses [go mod] for vendoring.
+Run the application with the `--help` flag to see all available options with
+their descriptions and default values (if any).
 
-```bash
-git clone https://github.com/lukasmalkmus/tankerkoenig.git
-cd tankerkoenig
-make build
-```
-
-#### Using the application
+#### Geo-Mode
 
 ```bash
-./tankerkoenig [flags]
+export TANKERKOENIG_API_KEY="YOUR_API_KEY"
+./tankerkoenig --tankerkoenig.location=u0yjje785f4 --tankerkoenig.radius=5
 ```
 
-Help on flags:
+**Note:** The `--tankerkoenig.product` flag is currently not implemented.
+
+#### Station-Mode
 
 ```bash
-./tankerkoenig --help
+export TANKERKOENIG_API_KEY="YOUR_API_KEY"
+./tankerkoenig --tankerkoenig.stations="51d4b55e-a095-1aa0-e100-80009459e03a"
 ```
 
-#### Using docker
+**Note**: The `--tankerkoenig.stations` flag can be used multiple times to add multiple
+stations to scrape.
 
-Docker images are now available on [DockerHub]!
+### Using docker
+
+Docker images are available on the [GitHub Package Registry] and [DockerHub].
 
 ```bash
-# .env file contains TANKERKOENIG_API_KEY="YOUR_API_TOKEN"
-docker run -p9386:9386/tcp --env-file=.env lukasmalkmus/tankerkoenig-exporter:v0.9.1 --api.stations="51d4b55e-a095-1aa0-e100-80009459e03a"
+# .env file contains TANKERKOENIG_API_KEY="YOUR_API_KEY"
+docker run -p9386:9386/tcp --env-file=.env lukasmalkmus/tankerkoenig-exporter:v0.10.0 --tankerkoenig.stations="51d4b55e-a095-1aa0-e100-80009459e03a"
 ```
 
-### Contributing
+## Contributing
 
 Feel free to submit PRs or to fill Issues. Every kind of help is appreciated.
 
-### License
+## License
 
-© Lukas Malkmus, 2020
+© Lukas Malkmus, 2023
 
 Distributed under Apache License (`Apache License, Version 2.0`).
 
@@ -84,18 +84,16 @@ See [LICENSE](LICENSE) for more information.
 
 <!-- Links -->
 
-[go mod]: https://golang.org/cmd/go/#hdr-Module_maintenance
-[lukas malkmus]: https://github.com/lukasmalkmus
+[tankerkoenig api]: https://creativecommons.tankerkoenig.de/#usage
 [tankerkoenig site]: https://creativecommons.tankerkoenig.de/#usage
-[tankstellenfinder]: https://creativecommons.tankerkoenig.de/TankstellenFinder/index.html
+[tankstellen finder]: https://creativecommons.tankerkoenig.de/TankstellenFinder/index.html
 [dockerhub]: https://hub.docker.com/r/lukasmalkmus/tankerkoenig-exporter
+[github package registry]: https://github.com/users/lukasmalkmus/packages?repo_name=tankerkoenig_exporter
 
 <!-- Badges -->
 
-[travis]: https://travis-ci.com/lukasmalkmus/tankerkoenig_exporter
-[travis_badge]: https://travis-ci.com/lukasmalkmus/tankerkoenig_exporter.svg
-[report]: https://goreportcard.com/report/github.com/lukasmalkmus/tankerkoenig_exporter
-[report_badge]: https://goreportcard.com/badge/github.com/lukasmalkmus/tankerkoenig_exporter
+[workflow]: https://github.com/lukasmalkmus/tankerkoenig_exporter/actions/workflows/ci.yaml
+[workflow_badge]: https://img.shields.io/github/actions/workflow/status/lukasmalkmus/tankerkoenig_exporter/ci.yaml?branch=main
 [release]: https://github.com/lukasmalkmus/tankerkoenig_exporter/releases
 [release_badge]: https://img.shields.io/github/release/lukasmalkmus/tankerkoenig_exporter.svg
 [license]: https://opensource.org/licenses/Apache-2.0
