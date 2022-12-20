@@ -69,6 +69,22 @@ Docker images are available on the [GitHub Package Registry].
 docker run -p9386:9386/tcp --env-file=.env ghcr.io/lukasmalkmus/tankerkoenig-exporter:0.10.0 --tankerkoenig.stations="51d4b55e-a095-1aa0-e100-80009459e03a"
 ```
 
+## Querying
+
+The exporter exposes the following Tankerkoenig API related metrics (there are
+a handful of exporter related metrics as well, like `up`, etc.):
+
+- `tk_station_price_euro{id, product}`: The fuel price in euro per liter.
+- `tk_station_open{id}`: Whether the station is open (`1`) or not (`0`).
+- `tk_station_details{id, name, address, city, geohash, brand}`: Details of the station.
+
+If you want to add station details when querying the price metric, you can join
+the two metrics like this:
+
+```promql
+tk_station_price_euro * on (id) group_left(brand, address) tk_station_details
+```
+
 ## Contributing
 
 Feel free to submit PRs or to fill Issues. Every kind of help is appreciated.
@@ -83,8 +99,8 @@ See [LICENSE](LICENSE) for more information.
 
 <!-- Links -->
 
-[tankerkoenig api]: https://creativecommons.tankerkoenig.de/#usage
-[tankerkoenig site]: https://creativecommons.tankerkoenig.de/#usage
+[tankerkoenig api]: https://creativecommons.tankerkoenig.de/home
+[tankerkoenig site]: https://creativecommons.tankerkoenig.de/api-key
 [tankstellen finder]: https://creativecommons.tankerkoenig.de/TankstellenFinder/index.html
 [github package registry]: https://github.com/lukasmalkmus/tankerkoenig_exporter/pkgs/container/tankerkoenig_exporter
 

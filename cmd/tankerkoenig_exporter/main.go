@@ -38,7 +38,27 @@ Example:
     $ tankerkoenig_exporter --tankerkoenig.stations 51d4b55e-a095-1aa0-e100-80009459e03a
     $ tankerkoenig_exporter --tankerkoenig.location u0yjjd6jk0zj7 --tankerkoenig.radius=3 --tankerkoenig.product=e5
 
-The --tankerkoenig.stations flag is mutually exclusive with the --tankerkoenig.location flag.
+The --tankerkoenig.stations flag is mutually exclusive with the
+--tankerkoenig.location, --tankerkoenig.radius and --tankerkoenig.product flags.
+
+KEY can be obtained from https://creativecommons.tankerkoenig.de/api-key.
+
+UUID is the unique identifier of a station. It can be obtained from the
+Tankerkoenig API or by using the Tankstellen Finder:
+https://creativecommons.tankerkoenig.de/TankstellenFinder/index.html.
+
+GEOHASH is the geohash of a location. It can easily be obtained from the
+internet.
+
+KM is the search radius in kilometers. Must be a positive integer.
+
+PRODUCT is the fuel type. Must be one of e5, e10, diesel or all to include all
+products.
+
+ADDRESS is the listen address for the web server. It must be in the form of
+[HOST]:PORT.
+
+PATH is the path under which to expose metrics. It must start with a slash.
 `
 
 type stringSliceValue []string
