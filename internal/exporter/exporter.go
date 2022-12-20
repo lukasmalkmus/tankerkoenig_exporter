@@ -246,19 +246,19 @@ func newExporter(logger *log.Logger, apiClient *client.Client) *Exporter {
 		priceDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "station", "price_euro"),
 			"Gas prices in EURO (€).",
-			[]string{"station_id", "product"},
+			[]string{"id", "product"},
 			nil,
 		),
 		openDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "station", "open"),
 			"Status of the station. 1 for OPEN, 0 for CLOSED.",
-			[]string{"station_id"},
+			[]string{"id"},
 			nil,
 		),
 		detailsDesc: prometheus.NewDesc(
 			prometheus.BuildFQName(namespace, "station", "details"),
 			"Associated details of a station. Always 1.",
-			[]string{"station_id", "station_name", "address", "city", "geohash", "station_brand"},
+			[]string{"id", "name", "address", "city", "geohash", "brand"},
 			nil,
 		),
 	}
