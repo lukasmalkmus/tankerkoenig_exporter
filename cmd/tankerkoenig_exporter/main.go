@@ -112,7 +112,8 @@ func main() {
 	flag.Parse()
 
 	if versionFlag {
-		if version.Print("tankerkoenig_exporter") != "" {
+		if v := version.Print("tankerkoenig_exporter"); v != "" {
+			fmt.Println(v)
 		} else if buildInfo, ok := debug.ReadBuildInfo(); ok {
 			fmt.Println(buildInfo.Main.Version)
 		} else {
