@@ -86,7 +86,7 @@ See [LICENSE](LICENSE) for more information.
 [tankerkoenig api]: https://creativecommons.tankerkoenig.de/#usage
 [tankerkoenig site]: https://creativecommons.tankerkoenig.de/#usage
 [tankstellen finder]: https://creativecommons.tankerkoenig.de/TankstellenFinder/index.html
-[github package registry]: https://github.com/users/lukasmalkmus/packages?repo_name=tankerkoenig_exporter
+[github package registry]: https://github.com/lukasmalkmus/tankerkoenig_exporter/pkgs/container/tankerkoenig_exporter
 
 <!-- Badges -->
 
