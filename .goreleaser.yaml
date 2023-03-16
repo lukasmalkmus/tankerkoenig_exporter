@@ -65,6 +65,7 @@ builds:
       - linux
     goarch:
       - amd64
+      - arm64
 
   - <<: *build_defaults
     id: windows
