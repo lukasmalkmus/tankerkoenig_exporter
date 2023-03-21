@@ -130,7 +130,7 @@ dockers:
       - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
       - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:latest"
     build_flag_templates:
-      - --platform=linux/amd64
+      - --platform=linux/amd64,linux/arm64
       - --label=org.opencontainers.image.title={{ .ProjectName }}
       - --label=org.opencontainers.image.description={{ .ProjectName }}
       - --label=org.opencontainers.image.url=https://github.com/lukasmalkmus/tankerkoenig_exporter
