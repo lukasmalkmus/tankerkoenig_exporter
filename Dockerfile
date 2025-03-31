@@ -3,8 +3,8 @@ FROM --platform=$TARGETPLATFORM alpine
 LABEL maintainer="Lukas Malkmus <mail@lukasmalkmus.com>"
 
 # Upgrade packages and install ca-certificates.
-RUN apk update --no-cache                 \
-    && apk upgrade --no-cache             \
+RUN --platform=$BUILDPLATFORM apk update --no-cache \
+    && apk upgrade --no-cache \
     && apk add --no-cache ca-certificates
 
 # Copy binary into image.
