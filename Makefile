@@ -1,7 +1,6 @@
 # TOOLCHAIN
-GO				:= CGO_ENABLED=0 GOBIN=$(CURDIR)/bin go
-GO_BIN_IN_PATH	:= CGO_ENABLED=0 go
-GOFMT			:= $(GO)fmt
+GO	  := CGO_ENABLED=0 go
+CGO	  := CGO_ENABLED=1 go
 
 # ENVIRONMENT
 VERBOSE	=
@@ -14,18 +13,12 @@ RELEASE		:= $(shell git describe --tags 2>/dev/null || git rev-parse --short HEA
 BRANCH		:= $(shell git branch --show-current)
 USER		:= $(shell whoami)
 
-# TOOLS
-GOLANGCI_LINT	:= bin/golangci-lint
-GORELEASER		:= bin/goreleaser
-GOTESTSUM		:= bin/gotestsum
-
 # MISC
 COVERPROFILE	:= coverage.out
 DIST_DIR		:= dist
-MANPAGES_DIR	:= man
 
 # GO TAGS
-GO_TAGS	:= osusergo netgo static_build
+GO_TAGS := osusergo netgo static_build
 
 # GO LD FLAGS
 GO_LD_FLAGS	:= -s -w -extldflags "-fno-PIC -static -Wl -z now -z relro"
@@ -36,9 +29,9 @@ GO_LD_FLAGS += -X github.com/prometheus/common/version.BuildUser=$(USER)
 GO_LD_FLAGS += -X github.com/prometheus/common/version.BuildDate=$(BUILD_DATE)
 
 # FLAGS
-GO_FLAGS			:= -buildvcs=false -buildmode=pie -installsuffix=cgo -trimpath -tags='$(GO_TAGS)' -ldflags='$(GO_LD_FLAGS)'
+GO_FLAGS 			:= -buildvcs=false -buildmode=pie -installsuffix=cgo -trimpath -tags='$(GO_TAGS)' -ldflags='$(GO_LD_FLAGS)'
 GO_TEST_FLAGS		:= -race -coverprofile=$(COVERPROFILE)
-GORELEASER_FLAGS	:= --snapshot --rm-dist
+GORELEASER_FLAGS	:= --snapshot --clean
 
 # DEPENDENCIES
 GOMODDEPS = go.mod go.sum
@@ -59,14 +52,14 @@ go-pkg-sourcefiles = $(shell $(call go-list-pkg-sources,$(strip $1)))
 all: dep fmt lint test build ## Run dep, fmt, lint, test and build
 
 .PHONY: build
-build: $(GORELEASER) dep.stamp $(call go-pkg-sourcefiles, ./...) ## Build the binaries
+build: dep.stamp $(call go-pkg-sourcefiles, ./...) ## Build the binaries
 	@echo ">> building binaries"
-	@$(GORELEASER) build $(GORELEASER_FLAGS)
+	@$(GO) tool goreleaser build $(GORELEASER_FLAGS)
 
 .PHONY: clean
 clean: ## Remove build and test artifacts
 	@echo ">> cleaning up artifacts"
-	@rm -rf bin $(DIST_DIR) $(MANPAGES_DIR) $(COVERPROFILE)
+	@rm -rf bin $(DIST_DIR) $(COVERPROFILE) dep.stamp
 
 .PHONY: cover
 cover: $(COVERPROFILE) ## Calculate the code coverage score
@@ -81,7 +74,7 @@ dep-clean: ## Remove obsolete dependencies
 .PHONY: dep-upgrade
 dep-upgrade: ## Upgrade all direct dependencies to their latest version
 	@echo ">> upgrading dependencies"
-	@$(GO) get -d $(shell $(GO) list -f '{{if not (or .Main .Indirect)}}{{.Path}}{{end}}' -m all)
+	@$(GO) get $(shell $(GO) list -f '{{if not (or .Main .Indirect)}}{{.Path}}{{end}}' -m all)
 	@make dep
 
 .PHONY: dep
@@ -94,66 +87,28 @@ dep.stamp: $(GOMODDEPS)
 	@touch $@
 
 .PHONY: fmt
-fmt: ## Format and simplify the source code using `gofmt`
+fmt: ## Format and simplify the source code using `golangci-lint fmt`
 	@echo ">> formatting code"
-	@! $(GOFMT) -s -w $(shell find . -path -prune -o -name '*.go' -print) | grep '^'
-
-.PHONY: generate
-generate: $(STRINGER) pkg/iofmt/format_string.go ## Generate code using `go generate`
+	@$(GO) tool golangci-lint fmt
 
 .PHONY: install
 install: $(GOPATH)/bin/tankerkoenig_exporter ## Install the binary into the $GOPATH/bin directory
 
 .PHONY: lint
-lint: $(GOLANGCI_LINT) ## Lint the source code
+lint: ## Lint the source code
 	@echo ">> linting code"
-	@$(GOLANGCI_LINT) run
-
-.PHONY: man
-man: $(GEN_CLI_DOCS) ## Generate man pages
-	@echo ">> generate man pages"
-	@rm -rf $(MANPAGES_DIR)
-	@$(GEN_CLI_DOCS) -d=$(MANPAGES_DIR) -t=$(RELEASE)
+	@$(GO) tool golangci-lint run
 
 .PHONY: test
-test: $(GOTESTSUM) ## Run all tests. Run with VERBOSE=1 to get verbose test output (`-v` flag)
+test: ## Run all tests. Run with VERBOSE=1 to get verbose test output ('-v' flag).
 	@echo ">> running tests"
-	@$(GOTESTSUM) $(GOTESTSUM_FLAGS) -- $(GO_TEST_FLAGS) ./...
-
-.PHONY: tools
-tools: $(GEN_CLI_DOCS) $(GOLANGCI_LINT) $(GORELEASER) $(GOTESTSUM) $(STRINGER) ## Install all tools into the projects local $GOBIN directory
+	@$(CGO) tool gotestsum $(GOTESTSUM_FLAGS) -- $(GO_TEST_FLAGS) ./...
 
 .PHONY: help
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-# GO GENERATE TARGETS
-
-pkg/iofmt/%_string.go: pkg/iofmt/%.go
-	@echo ">> generating $@ from $<"
-	@$(GO) generate $<
-
 # MISC TARGETS
 
 $(COVERPROFILE):
 	@make test
-
-# INSTALL TARGETS
-
-$(GOPATH)/bin/tankerkoenig_exporter: dep.stamp $(call go-pkg-sourcefiles, ./cmd/tankerkoenig_exporter)
-	@echo ">> installing tankerkoenig_exporter binary"
-	@$(GO_BIN_IN_PATH) install $(GO_FLAGS) ./cmd/tankerkoenig_exporter
-
-# TOOLS
-
-$(GOLANGCI_LINT): dep.stamp $(call go-pkg-sourcefiles, github.com/golangci/golangci-lint/cmd/golangci-lint)
-	@echo ">> installing golangci-lint"
-	@$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint
-
-$(GORELEASER): dep.stamp $(call go-pkg-sourcefiles, github.com/goreleaser/goreleaser)
-	@echo ">> installing goreleaser"
-	@$(GO) install github.com/goreleaser/goreleaser
-
-$(GOTESTSUM): dep.stamp $(call go-pkg-sourcefiles, gotest.tools/gotestsum)
-	@echo ">> installing gotestsum"
-	@$(GO) install gotest.tools/gotestsum

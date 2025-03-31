@@ -14,6 +14,8 @@ import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
+	"maps"
+
 	"github.com/lukasmalkmus/tankerkoenig_exporter/internal/client"
 )
 
@@ -139,10 +141,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) error {
 		errGroup errgroup.Group
 	)
 	for i := 0; i < len(ids); i += batchSize {
-		j := i + batchSize
-		if j > len(ids) {
-			j = len(ids)
-		}
+		j := min(i+batchSize, len(ids))
 
 		errGroup.Go(func(batch []string) func() error {
 			return func() error {
@@ -152,9 +151,7 @@ func (e *Exporter) scrape(ch chan<- prometheus.Metric) error {
 				}
 
 				pricesMu.Lock()
-				for k, v := range batchPrices {
-					prices[k] = v
-				}
+				maps.Copy(prices, batchPrices)
 				pricesMu.Unlock()
 
 				return nil

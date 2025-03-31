@@ -1,25 +1,17 @@
+version: "2"
+
 run:
   modules-download-mode: readonly
-  skip-dirs:
-    - .git
-    - .github
-    - .vscode
-    - bin
-    - dist
 
 linters:
-  disable-all: true
+  default: none
   enable:
     - bodyclose
     - dogsled
     - dupl
     - errcheck
-    - exportloopref
     - goconst
-    - gofmt
-    - goimports
     - gosec
-    - gosimple
     - govet
     - ineffassign
     - misspell
@@ -27,22 +19,44 @@ linters:
     - prealloc
     - revive
     - staticcheck
-    - stylecheck
-    - typecheck
     - unconvert
     - unparam
     - unused
     - whitespace
+  settings:
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+      allow-unused: false
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - .git
+      - .github
+      - .vscode
+      - bin
+      - dist
 
-linters-settings:
-  gofmt:
-    simplify: true
-  goimports:
-    local-prefixes: github.com/lukasmalkmus/tankerkoenig_exporter
-  govet:
-    check-shadowing: true
-  nolintlint:
-    allow-unused: false
-    allow-leading-space: false
-    require-explanation: true
-    require-specific: true
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    gofmt:
+      simplify: true
+    goimports:
+      local-prefixes:
+        - github.com/lukasmalkmus/tankerkoenig_exporter
+  exclusions:
+    generated: lax
+    paths:
+      - .git
+      - .github
+      - .vscode
+      - bin
+      - dist

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	versionColl "github.com/prometheus/client_golang/prometheus/collectors/version"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
 
@@ -177,7 +178,7 @@ func main() {
 	if err := reg.Register(collector); err != nil {
 		errorf("register tankerkoenig collector: %v", err)
 	}
-	if err := reg.Register(version.NewCollector("tk_exporter")); err != nil {
+	if err := reg.Register(versionColl.NewCollector("tk_exporter")); err != nil {
 		errorf("register version collector: %v", err)
 	}
 
@@ -187,7 +188,7 @@ func main() {
 		ErrorLog: log.New(os.Stderr, "promhttp", 0),
 		Timeout:  time.Second * 15,
 	}))
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`<html>
 		<head><title>Tankerkoenig API Exporter</title></head>
 		<body>
