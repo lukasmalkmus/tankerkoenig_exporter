@@ -1,5 +1,5 @@
 # Production image based on alpine.
-FROM alpine
+FROM --platform=$TARGETPLATFORM alpine
 LABEL maintainer="Lukas Malkmus <mail@lukasmalkmus.com>"
 
 # Upgrade packages and install ca-certificates.
