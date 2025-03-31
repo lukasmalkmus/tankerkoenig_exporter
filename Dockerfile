@@ -3,9 +3,9 @@ FROM alpine
 LABEL maintainer="Lukas Malkmus <mail@lukasmalkmus.com>"
 
 # Upgrade packages and install ca-certificates.
-RUN apk update --no-cache \
-    apk upgrade --no-cache \
-    apk add --no-cache ca-certificates
+RUN apk update --no-cache                 \
+    && apk upgrade --no-cache             \
+    && apk add --no-cache ca-certificates
 
 # Copy binary into image.
 COPY tankerkoenig_exporter /usr/bin/tankerkoenig_exporter
