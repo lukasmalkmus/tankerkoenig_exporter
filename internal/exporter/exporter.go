@@ -19,7 +19,10 @@ import (
 	"github.com/lukasmalkmus/tankerkoenig_exporter/internal/client"
 )
 
-const namespace = "tk"
+const (
+	namespace = "tk"
+	subsystem = "exporter"
+)
 
 var caser = cases.Title(language.German)
 
@@ -224,19 +227,19 @@ func newExporter(logger *log.Logger, apiClient *client.Client) *Exporter {
 		}),
 		scrapeDuration: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
-			Subsystem: "exporter",
+			Subsystem: subsystem,
 			Name:      "scrape_duration_seconds",
 			Help:      "Duration of the scrape of metrics from the Tankerkoenig API.",
 		}),
 		totalScrapes: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
-			Subsystem: "exporter",
+			Subsystem: subsystem,
 			Name:      "scrapes_total",
 			Help:      "Total Tankerkoenig API scrapes.",
 		}),
 		failedScrapes: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
-			Subsystem: "exporter",
+			Subsystem: subsystem,
 			Name:      "scrape_failures_total",
 			Help:      "Total amount of scrape failures.",
 		}),
