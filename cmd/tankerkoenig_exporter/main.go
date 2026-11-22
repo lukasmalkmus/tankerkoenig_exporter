@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -211,7 +212,7 @@ func main() {
 
 	errCh := make(chan error)
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}
 		close(errCh)
@@ -219,6 +220,7 @@ func main() {
 
 	select {
 	case <-ctx.Done():
+		log.Printf("shutting down: %v", context.Cause(ctx))
 		if err := srv.Shutdown(context.Background()); err != nil {
 			errorf("shutdown server: %v", err)
 		}
