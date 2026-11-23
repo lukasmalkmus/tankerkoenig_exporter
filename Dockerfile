@@ -8,7 +8,8 @@ RUN apk update --no-cache \
     && apk add --no-cache ca-certificates
 
 # Copy binary into image.
-COPY tankerkoenig_exporter /usr/bin/tankerkoenig_exporter
+ARG TARGETPLATFORM
+COPY $TARGETPLATFORM/tankerkoenig_exporter /usr/bin/tankerkoenig_exporter
 
 # Use the project name as working directory.
 WORKDIR /tankerkoenig_exporter
