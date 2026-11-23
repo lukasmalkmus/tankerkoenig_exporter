@@ -125,67 +125,68 @@ release:
   prerelease: auto
   name_template: Tankerkoenig API Exporter v{{ .Version }}
 
-dockers:
-  - use: buildx
-    goos: linux
-    goarch: amd64
+dockers_v2:
+  - id: multiarch
     ids:
       - docker
-    image_templates:
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}-amd64"
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}-amd64"
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64"
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:latest-amd64"
-    build_flag_templates:
-      - --platform=linux/amd64
-      - --label=org.opencontainers.image.title={{ .ProjectName }}
-      - --label=org.opencontainers.image.description={{ .ProjectName }}
-      - --label=org.opencontainers.image.url=https://github.com/lukasmalkmus/tankerkoenig_exporter
-      - --label=org.opencontainers.image.source=https://github.com/lukasmalkmus/tankerkoenig_exporter
-      - --label=org.opencontainers.image.documentation=https://github.com/lukasmalkmus/tankerkoenig_exporter
-      - --label=org.opencontainers.image.licenses=Apache 2.0
-      - --label=org.opencontainers.image.author=Lukas Malkmus <mail@lukasmalkmus.com>
-      - --label=org.opencontainers.image.created={{ .Date }}
-      - --label=org.opencontainers.image.revision={{ .FullCommit }}
-      - --label=org.opencontainers.image.version={{ .Version }}
-      - --label=org.opencontainers.image.vendor=Lukas Malkmus
-  - use: buildx
-    goos: linux
-    goarch: arm64
+    images:
+      - ghcr.io/lukasmalkmus/tankerkoenig_exporter
+    tags:
+      - "{{ .Major }}"
+      - "{{ .Major }}.{{ .Minor }}"
+      - "{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
+      - "latest"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    # Push plain images and indexes, without attestations.
+    sbom: false
+    flags:
+      - --provenance=false
+    labels: &labels
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.description: "{{ .ProjectName }}"
+      org.opencontainers.image.url: "https://github.com/lukasmalkmus/tankerkoenig_exporter"
+      org.opencontainers.image.source: "https://github.com/lukasmalkmus/tankerkoenig_exporter"
+      org.opencontainers.image.documentation: "https://github.com/lukasmalkmus/tankerkoenig_exporter"
+      org.opencontainers.image.licenses: "Apache 2.0"
+      org.opencontainers.image.author: "Lukas Malkmus <mail@lukasmalkmus.com>"
+      org.opencontainers.image.created: "{{ .Date }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.vendor: "Lukas Malkmus"
+  - id: amd64
+    # A snapshot already builds per-platform tags from the multiarch entry.
+    disable: "{{ .IsSnapshot }}"
     ids:
       - docker
-    image_templates:
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}-arm64"
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}-arm64"
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64"
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:latest-arm64"
-    build_flag_templates:
-      - --platform=linux/arm64
-      - --label=org.opencontainers.image.title={{ .ProjectName }}
-      - --label=org.opencontainers.image.description={{ .ProjectName }}
-      - --label=org.opencontainers.image.url=https://github.com/lukasmalkmus/tankerkoenig_exporter
-      - --label=org.opencontainers.image.source=https://github.com/lukasmalkmus/tankerkoenig_exporter
-      - --label=org.opencontainers.image.documentation=https://github.com/lukasmalkmus/tankerkoenig_exporter
-      - --label=org.opencontainers.image.licenses=Apache 2.0
-      - --label=org.opencontainers.image.author=Lukas Malkmus <mail@lukasmalkmus.com>
-      - --label=org.opencontainers.image.created={{ .Date }}
-      - --label=org.opencontainers.image.revision={{ .FullCommit }}
-      - --label=org.opencontainers.image.version={{ .Version }}
-      - --label=org.opencontainers.image.vendor=Lukas Malkmus
-docker_manifests:
-  - name_template: "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}"
-    image_templates:
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}-amd64"
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}-arm64"
-  - name_template: "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}"
-    image_templates:
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}-amd64"
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}-arm64"
-  - name_template: "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
-    image_templates:
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64"
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64"
-  - name_template: "ghcr.io/lukasmalkmus/tankerkoenig_exporter:latest"
-    image_templates:
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:latest-amd64"
-      - "ghcr.io/lukasmalkmus/tankerkoenig_exporter:latest-arm64"
+    images:
+      - ghcr.io/lukasmalkmus/tankerkoenig_exporter
+    tags:
+      - "{{ .Major }}-amd64"
+      - "{{ .Major }}.{{ .Minor }}-amd64"
+      - "{{ .Major }}.{{ .Minor }}.{{ .Patch }}-amd64"
+      - "latest-amd64"
+    platforms:
+      - linux/amd64
+    sbom: false
+    flags:
+      - --provenance=false
+    labels: *labels
+  - id: arm64
+    disable: "{{ .IsSnapshot }}"
+    ids:
+      - docker
+    images:
+      - ghcr.io/lukasmalkmus/tankerkoenig_exporter
+    tags:
+      - "{{ .Major }}-arm64"
+      - "{{ .Major }}.{{ .Minor }}-arm64"
+      - "{{ .Major }}.{{ .Minor }}.{{ .Patch }}-arm64"
+      - "latest-arm64"
+    platforms:
+      - linux/arm64
+    sbom: false
+    flags:
+      - --provenance=false
+    labels: *labels
